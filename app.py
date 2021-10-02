@@ -30,17 +30,23 @@ def index():
         return send_file(f'./{file.filename}.webp', mimetype='image/webp')
 
 
-@app.route('/gettext', methods=['POST'])
+@app.route('/text', methods=['POST'])
 def get_text():
     if request.method == 'POST':
         files = request.files
         file = files.get('image')
         file.save(secure_filename(file.filename))
         text = pytesseract.image_to_string(Image.open(f'{file.filename}'))
-        if os.path.exists(f'{file.filename}'):
-            os.remove(f'./{file.filename}')
+
+        @app.after_request
+        def delete(response):
+            if os.path.exists(f'{file.filename}.webp'):
+                os.remove(f'./{file.filename}.webp')
+                os.remove(f'./{file.filename}')
+            return response
         return jsonify(text)
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    # app.run(host='0.0.0.0', port=5000)
+    app.run(debug=True)
